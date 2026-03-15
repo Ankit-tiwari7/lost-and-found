@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lost & Found — Campus</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<div id="page-loader">
+  <div class="loader-grid"></div>
+  <div class="loader-corner tl"></div><div class="loader-corner tr"></div>
+  <div class="loader-corner bl"></div><div class="loader-corner br"></div>
+  <div class="loader-logo">L&F</div>
+  <div class="loader-bar-track"><div class="loader-bar-fill" id="loader-bar"></div></div>
+  <div class="loader-label" id="loader-label">Loading…</div>
+</div>
+
+<div class="admin-bar" id="admin-bar">
+  <div class="admin-bar-left">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Logged in as Admin — delete buttons are now visible
+  </div>
+  <button class="btn-logout" id="logout-btn">Logout</button>
+</div>
+
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">L&F</div>
+    <div class="nav-name">Lost <span>&amp;</span> Found</div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/" class="active">Home</a></li>
+    <li><a href="/report-lost">Report Lost</a></li>
+    <li><a href="/report-found">Report Found</a></li>
+    <li><a href="/claims">All Claims</a></li>
+    <li><a href="/login" id="nav-login-link">Admin</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">
+    <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+    Campus Lost &amp; Found System
+  </div>
+  <h1>Track your <span class="word-lost">Lost</span><br>&amp; <span class="word-found">Found</span> Items</h1>
+  <p>Report items, browse listings, and help reunite people with their belongings.</p>
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-num lost" id="stat-lost">—</div><div class="stat-label">Lost Items</div></div>
+    <div class="stat-item"><div class="stat-num found" id="stat-found">—</div><div class="stat-label">Found Items</div></div>
+  </div>
+</div>
+
+<main>
+  <div class="cta-strip">
+    <a href="/report-lost" class="btn btn-lost">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Report Lost Item
+    </a>
+    <a href="/report-found" class="btn btn-found">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Report Found Item
+    </a>
+    <a href="/claims" class="btn btn-ghost">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      View All Claims
+    </a>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" id="search-input" placeholder="Search by item name or location…"/>
+    <button class="search-clear" id="search-clear">&times;</button>
+  </div>
+  <div class="search-no-results" id="search-no-results">No items match your search.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-head">
+        <div class="section-title"><span class="dot dot-lost"></span>Lost Items</div>
+        <span class="count-pill count-lost" id="lost-count">0 items</span>
+      </div>
+      <div class="items-grid" id="lost-grid"></div>
+    </div>
+    <div>
+      <div class="section-head">
+        <div class="section-title"><span class="dot dot-found"></span>Found Items</div>
+        <span class="count-pill count-found" id="found-count">0 items</span>
+      </div>
+      <div class="items-grid" id="found-grid"></div>
+    </div>
+  </div>
+</main>
+
+<footer>Lost &amp; Found Management System &mdash; DBMS Mini Project &copy; 2025</footer>
+
+<div class="modal-overlay" id="claim-modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
+    <div class="modal-icon">🏷️</div>
+    <h3>Claim This Item</h3>
+    <p class="modal-sub">Provide your details and proof of ownership.</p>
+    <div class="modal-item-info">
+      <span class="modal-item-type" id="modal-item-type-badge">Found</span>
+      <span class="modal-item-name" id="modal-item-name">Item Name</span>
+    </div>
+    <form id="claim-form" autocomplete="off">
+      <input type="hidden" id="claim-item-type" name="item_type"/>
+      <input type="hidden" id="claim-item-id"   name="item_id"/>
+      <div class="form-group">
+        <label class="form-label" for="claimant_name">Your Full Name <span class="req">*</span></label>
+        <input type="text" id="claimant_name" name="claimant_name" class="form-control" placeholder="e.g. Ravi Kumar" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="claimant_contact">Phone or Email <span class="req">*</span></label>
+        <input type="text" id="claimant_contact" name="claimant_contact" class="form-control" placeholder="e.g. 9876543210" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="proof_description">Proof of Ownership <span class="req">*</span></label>
+        <textarea id="proof_description" name="proof_description" class="form-control" placeholder="Describe something only the owner would know…" required></textarea>
+      </div>
+      <button type="submit" class="btn-submit" style="background:#F5C842;color:#0D0F14;box-shadow:0 4px 20px rgba(245,200,66,0.3);">Submit Claim</button>
+      <div id="claim-alert" class="alert"></div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+function buildLostCard(item, i) {
+  return `
+  <div class="item-card card-lost" style="animation-delay:${i*60}ms" id="lost-${item.id}"
+       data-name="${escapeHtml(item.item_name).toLowerCase()}" data-location="${escapeHtml(item.location).toLowerCase()}">
+    ${item.image ? `<img src="${item.image}" class="card-image" alt="${escapeHtml(item.item_name)}"/>` : ''}
+    <div class="card-header">
+      <div class="card-title">${escapeHtml(item.item_name)}</div>
+      <span class="card-type-badge badge-lost">Lost</span>
+    </div>
+    ${item.description ? `<div class="card-desc">${escapeHtml(item.description)}</div>` : ''}
+    <div class="card-footer">
+      <span class="meta">${Icons.location} ${escapeHtml(item.location)}</span>
+      <span class="meta">${Icons.calendar} ${formatDate(item.date_lost)}</span>
+      <button class="btn-claim" onclick='openClaimModal("lost",${item.id},${JSON.stringify(item.item_name)})'>🏷️ This is mine!</button>
+      <button class="btn-delete" onclick="deleteItem('lost',${item.id})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>`;
+}
+
+function buildFoundCard(item, i) {
+  return `
+  <div class="item-card card-found" style="animation-delay:${i*60}ms" id="found-${item.id}"
+       data-name="${escapeHtml(item.item_name).toLowerCase()}" data-location="${escapeHtml(item.location).toLowerCase()}">
+    ${item.image ? `<img src="${item.image}" class="card-image" alt="${escapeHtml(item.item_name)}"/>` : ''}
+    <div class="card-header">
+      <div class="card-title">${escapeHtml(item.item_name)}</div>
+      <span class="card-type-badge badge-found">Found</span>
+    </div>
+    <div class="card-footer">
+      <span class="meta">${Icons.location} ${escapeHtml(item.location)}</span>
+      <span class="meta">${Icons.calendar} ${formatDate(item.date_found)}</span>
+      <button class="btn-claim" onclick='openClaimModal("found",${item.id},${JSON.stringify(item.item_name)})'>🏷️ This is mine!</button>
+      <button class="btn-delete" onclick="deleteItem('found',${item.id})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const lostGrid  = document.getElementById('lost-grid');
+  const foundGrid = document.getElementById('found-grid');
+  showLoading(lostGrid); showLoading(foundGrid);
+
+  async function loadLost() {
+    try {
+      const items = await LostAPI.getAll();
+      document.getElementById('stat-lost').textContent  = items.length;
+      document.getElementById('lost-count').textContent = `${items.length} item${items.length!==1?'s':''}`;
+      lostGrid.innerHTML = items.length === 0
+        ? `<div class="empty-state"><div class="empty-icon">🔍</div><p>No lost items yet.</p></div>`
+        : items.map((item, i) => buildLostCard(item, i)).join('');
+    } catch (e) { lostGrid.innerHTML = `<div class="empty-state"><p>⚠️ ${e.message}</p></div>`; }
+  }
+
+  async function loadFound() {
+    try {
+      const items = await FoundAPI.getAll();
+      document.getElementById('stat-found').textContent  = items.length;
+      document.getElementById('found-count').textContent = `${items.length} item${items.length!==1?'s':''}`;
+      foundGrid.innerHTML = items.length === 0
+        ? `<div class="empty-state"><div class="empty-icon">📦</div><p>No found items yet.</p></div>`
+        : items.map((item, i) => buildFoundCard(item, i)).join('');
+    } catch (e) { foundGrid.innerHTML = `<div class="empty-state"><p>⚠️ ${e.message}</p></div>`; }
+  }
+
+  await Promise.all([loadLost(), loadFound()]);
+  checkAdmin();
+});
+
+async function checkAdmin() {
+  try {
+    const res = await apiRequest('http://localhost:3000/admin/check');
+    if (res.isAdmin) {
+      document.body.classList.add('is-admin');
+      document.getElementById('admin-bar').classList.add('visible');
+      document.getElementById('nav-login-link').textContent = 'Admin ✓';
+    }
+  } catch(e) {}
+}
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await apiRequest('http://localhost:3000/admin/logout', 'POST');
+  window.location.reload();
+});
+
+async function deleteItem(type, id) {
+  if (!confirm(`Delete this ${type} item? This cannot be undone.`)) return;
+  try {
+    await apiRequest(`http://localhost:3000/${type}/${id}`, 'DELETE');
+    const card = document.getElementById(`${type}-${id}`);
+    if (card) { card.style.animation = 'pageExit 0.3s ease forwards'; setTimeout(() => card.remove(), 300); }
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+const noResults   = document.getElementById('search-no-results');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  searchClear.style.display = q ? 'block' : 'none';
+  const cards = document.querySelectorAll('.item-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const match = !q || (card.dataset.name||'').includes(q) || (card.dataset.location||'').includes(q);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  noResults.style.display = (q && visible === 0) ? 'block' : 'none';
+});
+
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  noResults.style.display = 'none';
+  document.querySelectorAll('.item-card').forEach(c => c.style.display = '');
+  searchInput.focus();
+});
+
+const overlay = document.getElementById('claim-modal-overlay');
+
+function openClaimModal(itemType, itemId, itemName) {
+  document.getElementById('claim-item-type').value = itemType;
+  document.getElementById('claim-item-id').value   = itemId;
+  document.getElementById('modal-item-name').textContent = itemName;
+  const badge = document.getElementById('modal-item-type-badge');
+  badge.textContent = itemType === 'found' ? 'Found' : 'Lost';
+  badge.className   = `modal-item-type ${itemType === 'found' ? 'badge-found' : 'badge-lost'}`;
+  document.getElementById('claim-alert').style.display = 'none';
+  document.getElementById('claim-form').reset();
+  document.getElementById('claim-item-type').value = itemType;
+  document.getElementById('claim-item-id').value   = itemId;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() { overlay.classList.remove('open'); document.body.style.overflow = ''; }
+document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+document.getElementById('claim-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const payload = {
+    item_type: form.item_type.value, item_id: parseInt(form.item_id.value),
+    claimant_name: form.claimant_name.value.trim(),
+    claimant_contact: form.claimant_contact.value.trim(),
+    proof_description: form.proof_description.value.trim()
+  };
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    await apiRequest('http://localhost:3000/claim', 'POST', payload);
+    showAlert('claim-alert', '✓ Claim submitted!', 'success');
+    form.reset();
+    setTimeout(closeModal, 2200);
+  } catch (err) {
+    showAlert('claim-alert', `✗ ${err.message}`, 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Submit Claim'; }
+});
+
+const loader = document.getElementById('page-loader');
+const loaderBar = document.getElementById('loader-bar');
+const loaderLabel = document.getElementById('loader-label');
+const labels = ['Loading…','Almost there…','Just a sec…'];
+function showLoader() {
+  loader.classList.add('visible');
+  let p = 0, li = 0; loaderBar.style.width = '0%';
+  const iv = setInterval(() => {
+    p += p<60?18:p<85?8:2; if(p>=95)p=95; loaderBar.style.width=p+'%';
+    if(p>40&&li===0){li=1;loaderLabel.textContent=labels[1];}
+    if(p>75&&li===1){li=2;loaderLabel.textContent=labels[2];}
+  }, 120);
+  return iv;
+}
+document.querySelectorAll('a[href]').forEach(link => {
+  const href = link.getAttribute('href');
+  if (!href.startsWith('http') && !href.startsWith('#') && !href.startsWith('mailto')) {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const iv = showLoader();
+      setTimeout(() => { clearInterval(iv); loaderBar.style.width='100%'; setTimeout(() => { window.location.href=href; }, 200); }, 600);
+    });
+  }
+});
+window.addEventListener('load', () => { if(loader) loader.classList.remove('visible'); });
+</script>
+</body>
+</html>

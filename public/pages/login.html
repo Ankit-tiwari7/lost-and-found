@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login — Lost & Found</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<div id="page-loader">
+  <div class="loader-grid"></div>
+  <div class="loader-corner tl"></div><div class="loader-corner tr"></div>
+  <div class="loader-corner bl"></div><div class="loader-corner br"></div>
+  <div class="loader-logo">L&F</div>
+  <div class="loader-bar-track"><div class="loader-bar-fill" id="loader-bar"></div></div>
+  <div class="loader-label" id="loader-label">Loading…</div>
+</div>
+
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">L&F</div>
+    <div class="nav-name">Lost <span>&amp;</span> Found</div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/report-lost">Report Lost</a></li>
+    <li><a href="/report-found">Report Found</a></li>
+    <li><a href="/claims">All Claims</a></li>
+    <li><a href="/login" class="active">Admin</a></li>
+  </ul>
+</nav>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <h2>Admin Login</h2>
+    <p class="sub">Login to approve claims and delete items.</p>
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-control login-focus" placeholder="Enter username" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-control login-focus" placeholder="Enter password" required/>
+      </div>
+      <button type="submit" class="btn-login" id="login-btn">Login</button>
+      <div id="login-alert" class="alert"></div>
+    </form>
+    <p style="margin-top:1.5rem;font-size:0.78rem;color:var(--text-3);text-align:center">
+      Default credentials: <code style="color:var(--text-2)">admin</code> / <code style="color:var(--text-2)">admin123</code>
+    </p>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+async function checkAlreadyLoggedIn() {
+  try {
+    const res = await apiRequest('http://localhost:3000/admin/check');
+    if (res.isAdmin) window.location.href = '/';
+  } catch(e) {}
+}
+checkAlreadyLoggedIn();
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn  = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try {
+    await apiRequest('http://localhost:3000/admin/login', 'POST', {
+      username: form.username.value.trim(),
+      password: form.password.value
+    });
+    showAlert('login-alert', '✓ Login successful! Redirecting…', 'success');
+    setTimeout(() => { window.location.href = '/'; }, 1000);
+  } catch(err) {
+    showAlert('login-alert', `✗ ${err.message}`, 'error');
+    btn.disabled = false; btn.textContent = 'Login';
+  }
+});
+
+const loader=document.getElementById('page-loader'),loaderBar=document.getElementById('loader-bar'),loaderLabel=document.getElementById('loader-label');
+const labels=['Loading…','Almost there…','Just a sec…'];
+function showLoader(){loader.classList.add('visible');let p=0,li=0;loaderBar.style.width='0%';const iv=setInterval(()=>{p+=p<60?18:p<85?8:2;if(p>=95)p=95;loaderBar.style.width=p+'%';if(p>40&&li===0){li=1;loaderLabel.textContent=labels[1];}if(p>75&&li===1){li=2;loaderLabel.textContent=labels[2];}},120);return iv;}
+document.querySelectorAll('a[href]').forEach(link=>{const href=link.getAttribute('href');if(!href.startsWith('http')&&!href.startsWith('#')&&!href.startsWith('mailto')){link.addEventListener('click',(e)=>{e.preventDefault();const iv=showLoader();setTimeout(()=>{clearInterval(iv);loaderBar.style.width='100%';setTimeout(()=>{window.location.href=href;},200);},600);});}});
+window.addEventListener('load',()=>{if(loader)loader.classList.remove('visible');});
+</script>
+</body>
+</html>

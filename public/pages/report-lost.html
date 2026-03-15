@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Report Lost Item</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<div id="page-loader">
+  <div class="loader-grid"></div>
+  <div class="loader-corner tl"></div><div class="loader-corner tr"></div>
+  <div class="loader-corner bl"></div><div class="loader-corner br"></div>
+  <div class="loader-logo">L&F</div>
+  <div class="loader-bar-track"><div class="loader-bar-fill" id="loader-bar"></div></div>
+  <div class="loader-label" id="loader-label">Loading…</div>
+</div>
+
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">L&F</div>
+    <div class="nav-name">Lost <span>&amp;</span> Found</div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/report-lost" class="active">Report Lost</a></li>
+    <li><a href="/report-found">Report Found</a></li>
+    <li><a href="/claims">All Claims</a></li>
+    <li><a href="/login">Admin</a></li>
+  </ul>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-eyebrow" style="color:var(--coral);background:var(--coral-dim);border-color:rgba(255,92,58,0.25)">
+    <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+    Lost Item Report
+  </div>
+  <h1>Lost something?</h1>
+  <p>Fill in the details and we'll post it so others can help.</p>
+</div>
+
+<div class="form-wrap">
+  <a href="/" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to home
+  </a>
+  <div class="form-card form-card-lost">
+    <div class="form-icon form-icon-lost">🔴</div>
+    <h2>Lost Item Details</h2>
+    <p class="sub">Fields marked <span style="color:var(--coral)">*</span> are required.</p>
+    <form id="lost-form" autocomplete="off" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label" for="item_name">Item Name <span class="req">*</span></label>
+        <input type="text" id="item_name" name="item_name" class="form-control form-control-lost" placeholder="e.g. Blue Backpack" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea id="description" name="description" class="form-control form-control-lost" placeholder="Colour, brand, distinguishing features…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="location">Where was it lost? <span class="req">*</span></label>
+        <input type="text" id="location" name="location" class="form-control form-control-lost" placeholder="e.g. Library 2nd Floor" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="date_lost">Date Lost <span class="req">*</span></label>
+        <input type="date" id="date_lost" name="date_lost" class="form-control form-control-lost" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Photo <span style="color:var(--text-3);font-size:0.7rem;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <div class="file-upload-wrap" id="upload-wrap">
+          <input type="file" name="image" id="image-input" accept="image/*"/>
+          <div class="file-upload-icon">📷</div>
+          <div class="file-upload-text">Drop image here or <span>browse</span></div>
+          <img class="file-preview" id="file-preview" src="" alt="Preview"/>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit btn-submit-lost">Submit Report</button>
+      <div id="form-alert" class="alert"></div>
+    </form>
+  </div>
+</div>
+
+<footer>Lost &amp; Found Management System &mdash; DBMS Mini Project &copy; 2025</footer>
+
+<script src="/js/api.js"></script>
+<script>
+document.getElementById('image-input').addEventListener('change', function() {
+  const preview = document.getElementById('file-preview');
+  if (this.files[0]) {
+    const reader = new FileReader();
+    reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(this.files[0]);
+  } else { preview.style.display = 'none'; }
+});
+
+const uploadWrap = document.getElementById('upload-wrap');
+uploadWrap.addEventListener('dragover', (e) => { e.preventDefault(); uploadWrap.classList.add('dragover'); });
+uploadWrap.addEventListener('dragleave', () => uploadWrap.classList.remove('dragover'));
+uploadWrap.addEventListener('drop', (e) => {
+  e.preventDefault(); uploadWrap.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    document.getElementById('image-input').files = dt.files;
+    const reader = new FileReader();
+    reader.onload = (ev) => { const p = document.getElementById('file-preview'); p.src = ev.target.result; p.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  }
+});
+
+document.getElementById('lost-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+  const btn = form.querySelector('button[type="submit"]');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    const res = await fetch('http://localhost:3000/lost', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showAlert('form-alert', '✓ Lost item reported successfully!', 'success');
+    form.reset();
+    document.getElementById('file-preview').style.display = 'none';
+  } catch (err) {
+    showAlert('form-alert', `✗ Error: ${err.message}`, 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Submit Report'; }
+});
+
+const loader=document.getElementById('page-loader'),loaderBar=document.getElementById('loader-bar'),loaderLabel=document.getElementById('loader-label');
+const labels=['Loading…','Almost there…','Just a sec…'];
+function showLoader(){loader.classList.add('visible');let p=0,li=0;loaderBar.style.width='0%';const iv=setInterval(()=>{p+=p<60?18:p<85?8:2;if(p>=95)p=95;loaderBar.style.width=p+'%';if(p>40&&li===0){li=1;loaderLabel.textContent=labels[1];}if(p>75&&li===1){li=2;loaderLabel.textContent=labels[2];}},120);return iv;}
+document.querySelectorAll('a[href]').forEach(link=>{const href=link.getAttribute('href');if(!href.startsWith('http')&&!href.startsWith('#')&&!href.startsWith('mailto')){link.addEventListener('click',(e)=>{e.preventDefault();const iv=showLoader();setTimeout(()=>{clearInterval(iv);loaderBar.style.width='100%';setTimeout(()=>{window.location.href=href;},200);},600);});}});
+window.addEventListener('load',()=>{if(loader)loader.classList.remove('visible');});
+</script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All Claims — Lost & Found</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body class="claims-page">
+
+<div id="page-loader">
+  <div class="loader-grid"></div>
+  <div class="loader-corner tl"></div><div class="loader-corner tr"></div>
+  <div class="loader-corner bl"></div><div class="loader-corner br"></div>
+  <div class="loader-logo">L&F</div>
+  <div class="loader-bar-track"><div class="loader-bar-fill" id="loader-bar"></div></div>
+  <div class="loader-label" id="loader-label">Loading…</div>
+</div>
+
+<div class="admin-bar" id="admin-bar">
+  <div class="admin-bar-left">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Logged in as Admin — you can approve and reject claims
+  </div>
+  <button class="btn-logout" id="logout-btn">Logout</button>
+</div>
+
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">L&F</div>
+    <div class="nav-name">Lost <span>&amp;</span> Found</div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/report-lost">Report Lost</a></li>
+    <li><a href="/report-found">Report Found</a></li>
+    <li><a href="/claims" class="active">All Claims</a></li>
+    <li><a href="/login" id="nav-login-link">Admin</a></li>
+  </ul>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-eyebrow" style="color:#F5C842;background:rgba(245,200,66,0.1);border-color:rgba(245,200,66,0.25)">
+    <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+    Ownership Claims
+  </div>
+  <h1>All Claims</h1>
+  <p>Review and manage item ownership requests.</p>
+</div>
+
+<main>
+  <a href="/" class="back-link" style="display:inline-flex;margin-top:2rem">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to home
+  </a>
+
+  <div id="not-admin-note" style="display:none;padding:10px 16px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);border-radius:var(--r-md);font-size:0.84rem;color:#F5C842;margin-bottom:1.5rem">
+    ⚠️ You are viewing in read-only mode. <a href="/login" style="color:#F5C842;font-weight:500;text-decoration:underline">Login as admin</a> to approve or reject claims.
+  </div>
+
+  <div class="claims-tabs">
+    <button class="claims-tab active" data-filter="all">All</button>
+    <button class="claims-tab" data-filter="pending">Pending</button>
+    <button class="claims-tab" data-filter="approved">Approved</button>
+    <button class="claims-tab" data-filter="rejected">Rejected</button>
+  </div>
+
+  <div class="stats-bar" style="max-width:520px;margin-bottom:1.75rem">
+    <div class="stat-item"><div class="stat-num" style="color:#F5C842" id="count-pending">—</div><div class="stat-label">Pending</div></div>
+    <div class="stat-item"><div class="stat-num found" id="count-approved">—</div><div class="stat-label">Approved</div></div>
+    <div class="stat-item"><div class="stat-num lost" id="count-rejected">—</div><div class="stat-label">Rejected</div></div>
+  </div>
+
+  <div id="claims-list"></div>
+</main>
+
+<footer>Lost &amp; Found Management System &mdash; DBMS Mini Project &copy; 2025</footer>
+
+<script src="/js/api.js"></script>
+<script>
+let allClaims = [], activeFilter = 'all', isAdmin = false;
+
+async function checkAdmin() {
+  try {
+    const res = await apiRequest('http://localhost:3000/admin/check');
+    isAdmin = res.isAdmin;
+    if (isAdmin) {
+      document.getElementById('admin-bar').classList.add('visible');
+      document.getElementById('nav-login-link').textContent = 'Admin ✓';
+      document.getElementById('not-admin-note').style.display = 'none';
+    } else {
+      document.getElementById('not-admin-note').style.display = 'block';
+    }
+  } catch(e) { document.getElementById('not-admin-note').style.display = 'block'; }
+}
+
+async function loadClaims() {
+  const list = document.getElementById('claims-list');
+  showLoading(list);
+  try {
+    allClaims = await apiRequest('http://localhost:3000/claims/all');
+    updateStats(); renderClaims();
+  } catch (e) { list.innerHTML = `<div class="empty-state"><p>⚠️ ${e.message}</p></div>`; }
+}
+
+function updateStats() {
+  document.getElementById('count-pending').textContent  = allClaims.filter(c=>c.status==='pending').length;
+  document.getElementById('count-approved').textContent = allClaims.filter(c=>c.status==='approved').length;
+  document.getElementById('count-rejected').textContent = allClaims.filter(c=>c.status==='rejected').length;
+}
+
+function renderClaims() {
+  const list     = document.getElementById('claims-list');
+  const filtered = activeFilter === 'all' ? allClaims : allClaims.filter(c => c.status === activeFilter);
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>No ${activeFilter==='all'?'':activeFilter+' '}claims yet.</p></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map((c, i) => buildClaimCard(c, i)).join('');
+}
+
+function buildClaimCard(c, i) {
+  const date = new Date(c.claimed_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  return `
+  <div class="claim-card" style="animation-delay:${i*50}ms">
+    <div>
+      <div class="claim-header">
+        <span class="claim-name">${escapeHtml(c.claimant_name)}</span>
+        <span class="status-badge status-${c.status}">${c.status}</span>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text-3);margin-bottom:0.5rem">📞 ${escapeHtml(c.claimant_contact)}</div>
+      <div class="claim-proof">"${escapeHtml(c.proof_description)}"</div>
+      <div class="claim-meta">
+        <span class="claim-item-link">
+          <span class="card-type-badge ${c.item_type==='found'?'badge-found':'badge-lost'}" style="font-size:0.65rem;padding:2px 7px">${c.item_type}</span>
+          ${escapeHtml(c.item_name||'—')}
+        </span>
+        <span class="meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          ${date}
+        </span>
+      </div>
+    </div>
+    <div class="claim-actions">
+      ${isAdmin && c.status==='pending' ? `
+        <button class="btn-approve" onclick="updateStatus(${c.id},'approved')">✓ Approve</button>
+        <button class="btn-reject"  onclick="updateStatus(${c.id},'rejected')">✗ Reject</button>
+      ` : `<span style="font-size:0.78rem;color:var(--text-3)">${isAdmin?'No actions':'Login to manage'}</span>`}
+    </div>
+  </div>`;
+}
+
+async function updateStatus(claimId, newStatus) {
+  try {
+    await apiRequest(`http://localhost:3000/claims/${claimId}/status`, 'PATCH', { status: newStatus });
+    const claim = allClaims.find(c => c.id === claimId);
+    if (claim) claim.status = newStatus;
+    updateStats(); renderClaims();
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await apiRequest('http://localhost:3000/admin/logout', 'POST');
+  window.location.reload();
+});
+
+document.querySelectorAll('.claims-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.claims-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeFilter = tab.dataset.filter;
+    renderClaims();
+  });
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkAdmin();
+  await loadClaims();
+});
+
+const loader=document.getElementById('page-loader'),loaderBar=document.getElementById('loader-bar'),loaderLabel=document.getElementById('loader-label');
+const labels=['Loading…','Almost there…','Just a sec…'];
+function showLoader(){loader.classList.add('visible');let p=0,li=0;loaderBar.style.width='0%';const iv=setInterval(()=>{p+=p<60?18:p<85?8:2;if(p>=95)p=95;loaderBar.style.width=p+'%';if(p>40&&li===0){li=1;loaderLabel.textContent=labels[1];}if(p>75&&li===1){li=2;loaderLabel.textContent=labels[2];}},120);return iv;}
+document.querySelectorAll('a[href]').forEach(link=>{const href=link.getAttribute('href');if(!href.startsWith('http')&&!href.startsWith('#')&&!href.startsWith('mailto')){link.addEventListener('click',(e)=>{e.preventDefault();const iv=showLoader();setTimeout(()=>{clearInterval(iv);loaderBar.style.width='100%';setTimeout(()=>{window.location.href=href;},200);},600);});}});
+window.addEventListener('load',()=>{if(loader)loader.classList.remove('visible');});
+</script>
+</body>
+</html>
